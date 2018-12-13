@@ -1,0 +1,83 @@
+//Write a program to show how thread private clause works. 
+#include<stdio.h>
+#include <omp.h> 
+
+int a, b, i, tid; 
+float x; 
+
+#pragma omp threadprivate(a, x) 
+main () 
+{ 
+/* Explicitly turn off dynamic threads */ 
+omp_set_dynamic(0); 
+printf("1st Parallel Region:\n"); 
+#pragma omp parallel private(b,tid) 
+{ 
+tid = omp_get_thread_num(); 
+a = tid; 
+b = tid; 
+x = 1.1 * tid +1.0; 
+printf("Thread %d: a,b,x= %d %d %f\n",tid,a,b,x); 
+} /* end of parallel section */ 
+
+printf("************************************\n"); 
+printf("Master thread doing serial work here\n"); 
+printf("************************************\n"); 
+printf("2nd Parallel Region:\n"); 
+#pragma omp parallel private(tid) 
+{ 
+tid = omp_get_thread_num(); 
+printf("Thread %d: a,b,x= %d %d %f\n",tid,a,b,x); 
+} /* end of parallel section */ 
+} 
+
+
+//10. Write a program to show how first private clause works. (Factorial program) 
+
+#include <stdio.h> 
+#include <malloc.h> 
+#include <omp.h> 
+
+long long factorial(long n) 
+{ 
+long long i,out; 
+out = 1; 
+for (i=1; i<n+1; i++) out *= i; 
+return(out); 
+} 
+
+int main(int argc, char **argv) 
+{ 
+int i,j,threads; 
+long long *x; 
+long long n=12; 
+
+/* Set number of threads equal to argv[1] if present */ 
+if (argc > 1) 
+{ 
+   threads = atoi(argv[1]); 
+   if (omp_get_dynamic()) 
+   { 
+     omp_set_dynamic(0); 
+     printf("called omp_set_dynamic(0)\n"); 
+    } 
+   omp_set_num_threads(threads); 
+ } 
+
+printf("%d threads\n",omp_get_max_threads()); 
+x = (long long *) malloc(n * sizeof(long)); 
+for (i=0;i<n;i++) x[i]=factorial(i); 
+j=0; 
+
+/* Is the output the same if the following line is commented out? */ 
+#pragma omp parallel for firstprivate(x,j) 
+for (i=1; i<n; i++) 
+{ 
+j += i; 
+x[i] = j*x[i-1]; 
+} 
+for (i=0; i<n; i++) 
+printf("factorial(%2d)=%14lld x[%2d]=%14lld\n",i,factorial(i),i,x[i]); 
+return 0; 
+} 
+
